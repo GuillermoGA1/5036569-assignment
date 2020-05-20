@@ -19,7 +19,7 @@ epsilon         = 1e-10;
 maxIterations   = 100;
 
 %%%SET INITIAL VALUES%%%
-Ex_0 = [155; 0.2; -0.2; 0.9];  % initial estimate, x_hat(0|0) == E{x_0} (or x_hat_0_0)
+Ex_0 = [155; 0.3; -0.15; 0.2];  % initial estimate, x_hat(0|0) == E{x_0} (or x_hat_0_0)
 m = 3;  %Number of inputs: u_dot, v_dot, w_dot
 
 % Initial estimate for covariance matrix
@@ -87,18 +87,18 @@ for k=1:N
             break
         end
         
-        %Step 7: measurement update
         iterations = iterations + 1;
-        eta1 = eta2;
+        
         
        %Step 5: calculate the jacobian for function h.
+       eta1 = eta2;
        Hx = get_Hx(eta1, U_k(k,:)); 
          
        %Step 6: calculate Kalman gain matrix
        Inv = (Hx*P_k1_k*Hx' + R); %first get innovation matrix
        K_k1 = P_k1_k * Hx'/Inv;
        
-       %new observation state
+       % Step 7: new observation state
        z_p = get_h(eta1, U_k(k,:));
        eta2 = x_k1_k + K_k1 * (Z_k(k,:)' - z_p - Hx*(x_k1_k - eta1));
        %Compute error (stop criteria)
@@ -138,20 +138,47 @@ Z_k=Z_k';
 figure(1);
 subplot(3,1,1);
 hold on
-plot(t, Z_k(1, :), 'r',t, Z_k1_biased(1, :), 'b',t, Z_K1_K(1, :), 'g');
+plot(t, Z_k(1, :), 'y','LineWidth',1.3);
+hold on
+plot(t, Z_k1_biased(1, :), 'm',t, Z_K1_K(1, :), 'b');
+xlabel('Time [s]')
+ylabel('\alpha [rad]');
+title('Angle of attack');
+legend({'Raw','Filtered-biased','Filtered-unbiased'},'Location','northwest');
 grid on
 subplot(3,1,2);
-plot(t, Z_k(2, :), 'r',t, Z_K1_K(2, :), 'b');
+plot(t, Z_k(2, :), 'y',t, Z_K1_K(2, :), 'm');
 grid on
+xlabel('Time [s]')
+ylabel('\beta [rad]');
+title('Sideslip angle');
+legend({'Raw','Filtered'},'Location','northwest');
 subplot(3,1,3);
-plot(t, Z_k(3, :), 'r',t, Z_K1_K(3, :), 'b');
+plot(t, Z_k(3, :), 'y',t, Z_K1_K(3, :), 'm');
 grid on
+xlabel('Time [s]')
+ylabel('V_m[m/s]');
+title('Aircraft velocity');
+legend({'Raw','Filtered'},'Location','northwest');
 
 figure(2);
+subplot(2,1,1);
 plot(t, IEKF_COUNT, 'b');
+xlabel('Time [s]')
+ylabel('Number of iterations');
+title('Iterations required to reach desired error');
+subplot(2,1,2);
+plot(t,X_K1_K1(4,:));
+xlabel('Time [s]')
+ylabel('C_\alpha');
+title('Washup coefficient estimate');
 
 figure(3);
-plot(Z_k(1, :), Z_k(2, :), 'r',Z_k1_biased(1, :),Z_k1_biased(2, :),'b',...
-    Z_K1_K(1,:),Z_K1_K(2,:),'g');
+plot(Z_k(1, :), Z_k(2, :), 'y',Z_k1_biased(1, :),Z_k1_biased(2, :),'m',...
+    Z_K1_K(1,:),Z_K1_K(2,:),'b');
 grid on
+xlabel('\alpha [rad]')
+ylabel('\beta [rad]');
+title('Angle of attack vs sideslip angle');
+legend({'Raw','Filtered-biased','Filtered-unbiased'},'Location','northeast');
 
