@@ -1,6 +1,6 @@
-function [net,y_train,y_test] = train_FF_lm(XtrainData,YtrainData,XtestData,YtestData,n_neurons,...
+function [net,y_train,y_test,error] = train_FF_lm(XtrainData,YtrainData,XtestData,YtestData,n_neurons,...
     input_bias, output_bias,W_init,n_epochs,goal,min_grad,mu,alpha,mu_max,max_fails)
-
+rng(1019);
 n_inputs = size(XtrainData,2);
 n_outputs = size(YtrainData,2);
 N = size(XtrainData,1);
@@ -77,7 +77,7 @@ if E_t1 <= E
     mu = mu * 1/alpha;
 else
     z = 0;
-    while E_t1 > E && z<5
+    while E_t1 > E && z<7
         mu = mu * alpha;
         w_t1 = w - pinv(J' * J + mu*eye(size(w,1))) * (J'*e);
         [y_k,~,~] = simFF(XtrainData,w_t1,input_bias,output_bias,n_neurons);
@@ -85,7 +85,7 @@ else
         E_t1 = (1/2) * sum(e.^2);
         z= z+1;
     end
-    mu = mu * 1/alpha;
+    %mu = mu * 1/alpha;
     w = w_t1;
 end
 
@@ -98,7 +98,7 @@ error(epochs,1) = immse(y_est_train,YtrainData);
 error(epochs,2) = immse(y_est_test,YtestData);
 
 %Check validation fails 
-if epochs > 1 && error(epochs,2) > error(epochs-1,2)
+if epochs > 1 && error(epochs,2) >= error(epochs-1,2)
     validation_fails = validation_fails +1;
 end
 if epochs > 1 && error(epochs,2) < error(epochs-1,2)
@@ -108,6 +108,9 @@ end
 if validation_fails >= max_fails
     stop = 1;
     criteria = 'Maximum validation fails reached';
+    for k=(epochs-validation_fails):epochs
+        error(epochs,:)=zeros(1,2);
+    end
 elseif abs(gradient(error(:,1)))< min_grad
     stop = 1;
     criteria = 'Too low gradient';
@@ -125,14 +128,20 @@ else
 end
 
 end
-
+IW = [w(1:n_neurons-1) w(n_neurons:2*(n_neurons-1)) w(2*n_neurons-1:3*(n_neurons-1)) w(3*n_neurons-2:4*(n_neurons-1))]';
+LW =  w(4*n_neurons-3:end);
+error = nonzeros(error);
+error = reshape(error,[],2);
+n_epochs = size(error,1);
+y_test = y_test(:,1:n_epochs);
+y_train = y_train(:,1:n_epochs);
 net.b{1,1} = IW(1,:);
 net.b{2,1} = LW(1,1);
 net.IW =IW(2:end,:)';
 net.LW = LW(2:end)';
 net.w_vector = w;
-net.trainParam.goal = error(epochs,1);
-net.trainParam.epochs= epochs;
+net.trainParam.goal = error(n_epochs,1);
+net.trainParam.epochs= n_epochs;
 disp(criteria);
 
 end

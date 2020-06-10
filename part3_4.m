@@ -1,11 +1,11 @@
 %% Influence of learning rate in LM algorithm (part 3.4)
 % Define data sets
 clear all;
-rng(1);
+rng(105);
 load('F16traindata_reconstructed.mat','Z_K1_K','Cm');
 close all;
 X= Z_K1_K'; Y = Cm;
-test_fraction = 0.2;
+test_fraction = 0.3;
 cv = cvpartition(size(X,1),'HoldOut',test_fraction);
 idx = cv.test;
 Xtrain = X(~idx,:);     Ytrain = Y(~idx,:);
@@ -13,16 +13,16 @@ Xtest  = X(idx,:);      Ytest  = Y(idx,:);
 
 %Network parameters
 n_neurons = 30;
-RBFcenters = 1; W_init = 1;
-n_epochs = 40;
+RBFcenters = 3; W_init = 1;
+n_epochs = 50;
 goal = 0;
 min_grad = 1e-10;
 mu_max = 1e10;
-max_fails = 7;
+max_fails = 3;
 
-var_rate = 5;
+var_rate = 10;
 fix_rate = 1;
-mu = [1 0.001 1e-6];
+mu = [1 0.0001 1e-6];
 convergence_fix = zeros(n_epochs,length(mu));
 convergence_var = zeros(n_epochs,length(mu));
 
@@ -40,4 +40,4 @@ semilogy(axis,convergence_fix,axis,convergence_var);
 xlabel('Epochs [-]');
 ylabel('MSE [-]');
 title('Effect of learning rate in MSE convergence');
-legend('Fix 1','Fix 0.001', 'Fix 1e-6','Var 1','Var 0.001','Var 1e-6');
+legend('Fix 1','Fix 0.0001', 'Fix 1e-6','Adaptive 1','Adaptive 0.0001','Adaptive 1e-6');

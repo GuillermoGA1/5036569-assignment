@@ -1,10 +1,10 @@
 %% Define data sets
 clear all;
-rng(1);
+rng(105);
 load('F16traindata_reconstructed.mat','Z_K1_K','Cm');
 close all;
 X= Z_K1_K'; Y = Cm;
-test_fraction = 0.25;
+test_fraction = 0.3;
 cv = cvpartition(size(X,1),'HoldOut',test_fraction);
 idx = cv.test;
 Xtrain = X(~idx,:);     Ytrain = Y(~idx,:);
@@ -22,14 +22,14 @@ Ytest = normalize(Ytest);
 
 %% Back propagation FF (part 4.1)
 %Set network parameters 
-n_neurons = 50;
-input_bias = 1;
-output_bias = 1;
-n_epochs = 100;
+n_neurons = 30;
+input_bias = -1;
+output_bias = -1;
+n_epochs = 50;
 goal = 0;
 min_grad = 1e-10;
-eta = 1e-6;
-alpha = 5;
+eta = 0.0001;
+alpha = 10;
 eta_max = 1e10;
 max_fails = 3;
 W_init = 1;
@@ -42,12 +42,12 @@ Y_est_test_bp = simFF(Xtest,FFnet_backprop.w_vector,input_bias,output_bias,n_neu
 
 %% Levenberg-Marquadt FF (4.2)
 %Set network parameters 
-mu = 0.001;
+mu = 0.0001;
 alpha = 10;
 mu_max = 1e10;
-max_fails = 5;
 
-[FFnet_lm,y_train_lm,y_test_lm] = train_FF_lm(Xtrain,Ytrain,Xtest,Ytest,n_neurons,...
+
+[FFnet_lm,y_train_lm,y_test_lm,error] = train_FF_lm(Xtrain,Ytrain,Xtest,Ytest,n_neurons,...
     input_bias, output_bias,W_init,n_epochs,goal,min_grad,mu,alpha,mu_max,max_fails);
 
 Y_est_train_lm = simFF(Xtrain,FFnet_lm.w_vector,input_bias,output_bias,n_neurons);
@@ -76,6 +76,7 @@ for k=1:size(y_test_bp,2)
     error_bp_test = [error_bp_test;immse(Ytest,y_test_bp(:,k))];   
 end
 
+
 error_lm_train =[];
 error_lm_test = [];
 for k=1:size(y_test_lm,2)
@@ -89,7 +90,7 @@ plot_title = 'Error map using FF network (back propagation)';
 IOmap_error(Xtest,Ytest,Y_est_test_bp,plot_title,2);
 
 figure(3);
-axis = 1:n_epochs;
+axis = 1:size(error_bp_train,1);
 semilogy(axis,error_bp_train,axis,error_bp_test);
 xlabel('Epochs [-]'); ylabel('MSE [-]');
 title('MSE performance of FF network (Back propagation)');
@@ -102,10 +103,8 @@ plot_title = 'Error map using FF network (LM algorithm)';
 IOmap_error(Xtest,Ytest,Y_est_test_lm,plot_title,5);
 
 figure(6);
-axis = 1:n_epochs;
+axis = 1:size(error_lm_test,1);
 semilogy(axis,error_lm_train,axis,error_lm_test);
 xlabel('Epochs [-]'); ylabel('MSE [-]');
 title('MSE performance of FF network (LM algorithm)');
 legend('MSE for train data', 'MSE for test data');
-
-

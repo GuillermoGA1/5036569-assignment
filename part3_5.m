@@ -1,7 +1,7 @@
 %% Optimizing number of neurons
 % Define data sets
 clear all;
-rng(1);
+rng(105);
 load('F16traindata_reconstructed.mat','Z_K1_K','Cm');
 close all;
 X= Z_K1_K'; Y = Cm;
@@ -12,35 +12,37 @@ Xtrain = X(~idx,:);     Ytrain = Y(~idx,:);
 Xtest  = X(idx,:);      Ytest  = Y(idx,:);
 
 %Network parameters
-n_neurons = 1;
-RBFcenters = 1; W_init = 1;
-n_epochs = 35;
+n_neurons = 0;
+RBFcenters = 3; W_init = 2;
+n_epochs = 50;
 goal = 0;
 min_grad = 1e-10;
 mu_max = 1e10;
-max_fails = 4;
+max_fails = 3;
 alpha = 10;
-mu = 0.001;
+mu = 0.0001;
 
 %Arrays to store
 test_mse = [];
 train_mse = [];
 N_NEURONS = [];
+ERROR = [];
 i = 0;
 stop = 0;
 fails = 0;
-test_fails = 4;
+test_fails = 3;
 
-%Iterate for several damping values
-while ~stop && n_neurons <= 120
-    i= i+1;
+%Iterate for several number of neurons
+while ~stop && n_neurons <= 100
+ i= i+1;
+ n_neurons = n_neurons + 5;
 [RBF_net_lm,error] = train_RBF_lm(Xtrain,Ytrain,Xtest,Ytest,n_neurons,RBFcenters,W_init,n_epochs,goal,min_grad,mu,alpha,mu_max,max_fails);
+ERROR = [ERROR error(:,2)];
 e1 = nonzeros(error(:,1));
 e2 = nonzeros(error(:,2));
 N_NEURONS = horzcat(N_NEURONS, n_neurons);
 train_mse = horzcat(train_mse,e1(end));
 test_mse = horzcat(test_mse,e2(end));
-n_neurons = n_neurons + 1;
 
 if i > 1 && test_mse(1,i) > test_mse(1,i-1)
     fails = fails +1 ;
@@ -56,7 +58,7 @@ end
 end
  
 %Do previous net
-n_neurons = 20;
+n_neurons = 55;
 [RBFnet1,error1] = train_RBF_lm(Xtrain,Ytrain,Xtest,Ytest,n_neurons,RBFcenters,W_init,n_epochs,goal,min_grad,mu,alpha,mu_max,max_fails);
 Y_est_test_1 = simRBF(Xtest,RBFnet1.IW',RBFnet1.LW',RBFnet1.centers);
 plot_title = 'C_m estimation using RBF (random # neurons)';
@@ -88,5 +90,7 @@ ylabel('MSE [-]');
 title('Effect of number of neurons in net performance');
 legend('Test MSE','Train MSE');
 
+figure(7)
+semilogy(axis,ERROR);
 
 

@@ -1,6 +1,6 @@
 function [net,y_train,y_test] = train_FF_backprop(XtrainData,YtrainData,XtestData,YtestData,n_neurons,...
     input_bias, output_bias,W_init,n_epochs,goal,min_grad,eta,alpha,eta_max,max_fails)
-
+rng(1019);
 n_inputs = size(XtrainData,2);
 n_outputs = size(YtrainData,2);
 N = size(XtrainData,1);
@@ -100,7 +100,7 @@ error(epochs,1) = immse(y_est_train,YtrainData);
 error(epochs,2) = immse(y_est_test,YtestData);
 
 %Check validation fails 
-if epochs > 1 && error(epochs,2) > error(epochs-1,2)
+if epochs > 1 && error(epochs,2) >= error(epochs-1,2)
     validation_fails = validation_fails +1;
 end
 if epochs > 1 && error(epochs,2) < error(epochs-1,2)
@@ -128,7 +128,13 @@ else
 end
 
 end
-
+IW = [w(1:n_neurons-1) w(n_neurons:2*(n_neurons-1)) w(2*n_neurons-1:3*(n_neurons-1)) w(3*n_neurons-2:4*(n_neurons-1))]';
+LW =  w(4*n_neurons-3:end);
+error = nonzeros(error);
+error = reshape(error,[],2);
+n_epochs = size(error,1);
+y_test = y_test(:,1:n_epochs);
+y_train = y_train(:,1:n_epochs);
 net.b{1,1} = IW(1,:);
 net.b{2,1} = LW(1,1);
 net.IW =IW(2:end,:)';
